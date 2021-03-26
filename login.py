@@ -1,61 +1,71 @@
-from functions import *
 from tkinter import *
 from tkinter import ttk, messagebox
-from PIL import ImageTk, Image
+from PIL import ImageTk
+from PIL import Image as pilImage
 from ttkthemes import ThemedTk
-import sqlite3, bcrypt
+import sqlite3, bcrypt, os
+from dotenv import load_dotenv
+import functions as fn
+from dashboard import Dashboard
 
 class Login():
 
-    def __init__(self,master):
-        self.master=master
-        self.master.title('Login | School Management System')
+    def __init__(self):
+        self.master = ThemedTk(background=True, theme="breeze")
+        self.master.title('Login | ' + os.getenv("APP_TITLE"))
         self.master.iconbitmap('images/icon.ico')
         self.master.geometry('450x650')
         self.master.resizable(False, False)
         
+        load_dotenv()
+
         self.username = StringVar()
         self.password = StringVar()
 
-        self.icon = ImageTk.PhotoImage(Image.open('images/icon.ico'))
+        self.icon = ImageTk.PhotoImage(pilImage.open('images/icon.ico'))
         lbl_logo = ttk.Label(self.master, image=self.icon)
         content = ttk.Frame(self.master)
 
-        lbl_title = ttk.Label(content, text='School Management System', font=("Segoe UI", 18, "bold")).pack()
-        lbl_subtitle = ttk.Label(content, text='Authenticate yourself to continue...', font=("Segoe UI", 14)).pack(pady=(0,20))
+        lbl_title = ttk.Label(content, text=os.getenv("APP_TITLE"), font=("Segoe UI", 18, "bold")).pack()
+        lbl_subtitle = ttk.Label(content, text=os.getenv("APP_SUBTITLE"), font=("Segoe UI", 14)).pack(pady=(0,20))
+        lbl_username = ttk.Label(content, text="username or email address", font=("Segoe UI", 10))
         txt_username = ttk.Entry(content, textvariable=self.username)
-        txt_password = ttk.Entry(content, textvariable=self.password)
+        lbl_password = ttk.Label(content, text="password", font=("Segoe UI", 10))
+        txt_password = ttk.Entry(content, textvariable=self.password, show="*")
         btn_submit = ttk.Button(content, text="Submit", command=self.validate_user)
 
-        lbl_logo.pack(side=TOP, pady=20)
+        lbl_logo.pack(side=TOP)
         content.pack(side=BOTTOM, pady=50)
-        txt_username.pack(fill=X)
-        txt_password.pack(fill=X)
+        lbl_username.pack(anchor=NW)
+        txt_username.pack(fill=X, pady=(0,5))
+        lbl_password.pack(anchor=NW)
+        txt_password.pack(fill=X, pady=(0,5))
         btn_submit.pack(fill=X, pady=20)
         
-        txt_username.insert(0, "username or email address")
-        txt_username.bind("<FocusIn>", lambda args: clear_entry(txt_username))
-        txt_username.bind("<FocusOut>", lambda args: put_entry(txt_username, "Please type your username"))
-
-        txt_password.insert(0, "password")
-        txt_password.bind("<FocusIn>", lambda args: clear_entry(txt_password))
-        txt_password.bind("<FocusOut>", lambda args: put_entry(txt_password, "Please type your password"))
-
-    def validate_user(self, db='school.db'):
-        if os.path.isfile(db):
-            conn = sqlite3.connect(db)  
-            cur = conn.cursor()
-            cur.execute("SELECT username, password from users")
-            for data in cur.fetchall():
-                if data[0] == self.username.get() and bcrypt.checkpw(self.password.get().encode(), data[1]):
-                    self.master.destroy() 
-                else:
-                    messagebox.showerror("Error","Please Make Sure That the Details are Correct")
+    def validateUser(self):
+        user = self.username.get()
+        pswd = self.password.get()
+        if user and pswd:
+            if fn.isUserValidate(user, pswd):
+                fn.createAuth(user)
+                self.destroy()
+                Dashboard.start(self)
+            else:
+                messagebox.showerror("Error","Please make sure that the details are correct!")
         else:
-            create_db(db)
-            login.validate_user()
+            messagebox.showerror("Error","Please enter your login details!")
+
+    def start(self):
+        self.master.mainloop()
+
+    def destroy(self):
+        self.master.destroy()
 
 if __name__ == '__main__':
-    root = ThemedTk(background=True, theme="breeze")
-    login = Login(root)
-    root.mainloop()
+    # if not fn.checkAuth():
+    #     dash = Dashboard()
+    #     dash.start()
+    # else:
+    #     login = Login()
+    #     login.start()
+    
