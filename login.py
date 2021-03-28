@@ -1,24 +1,24 @@
+import os
 from tkinter import *
 from tkinter import ttk, messagebox
 from PIL import ImageTk
 from PIL import Image as pilImage
-from ttkthemes import ThemedTk
-import sqlite3, bcrypt, os
 from dotenv import load_dotenv
 import functions as fn
-from dashboard import Dashboard
+from panel import Panel
 
 class Login():
 
-    def __init__(self):
-        self.master = ThemedTk(background=True, theme="breeze")
-        self.master.title('Login | ' + os.getenv("APP_TITLE"))
+    def __init__(self, master):
+        
+        self.master = master
+        load_dotenv()
+
+        self.master.title(fn.winTitle('Login'))
         self.master.iconbitmap('images/icon.ico')
         self.master.geometry('450x650')
         self.master.resizable(False, False)
         
-        load_dotenv()
-
         self.username = StringVar()
         self.password = StringVar()
 
@@ -32,7 +32,7 @@ class Login():
         txt_username = ttk.Entry(content, textvariable=self.username)
         lbl_password = ttk.Label(content, text="password", font=("Segoe UI", 10))
         txt_password = ttk.Entry(content, textvariable=self.password, show="*")
-        btn_submit = ttk.Button(content, text="Submit", command=self.validate_user)
+        btn_submit = ttk.Button(content, text="Submit", command=self.validateUser)
 
         lbl_logo.pack(side=TOP)
         content.pack(side=BOTTOM, pady=50)
@@ -48,24 +48,9 @@ class Login():
         if user and pswd:
             if fn.isUserValidate(user, pswd):
                 fn.createAuth(user)
-                self.destroy()
-                Dashboard.start(self)
+                self.master.destroy() 
+                fn.start(Panel)
             else:
                 messagebox.showerror("Error","Please make sure that the details are correct!")
         else:
             messagebox.showerror("Error","Please enter your login details!")
-
-    def start(self):
-        self.master.mainloop()
-
-    def destroy(self):
-        self.master.destroy()
-
-if __name__ == '__main__':
-    # if not fn.checkAuth():
-    #     dash = Dashboard()
-    #     dash.start()
-    # else:
-    #     login = Login()
-    #     login.start()
-    
