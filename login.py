@@ -1,11 +1,10 @@
 import os
 from tkinter import *
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from PIL import ImageTk
 from PIL import Image as pilImage
 from dotenv import load_dotenv
 import functions as fn
-from panel import Panel
 
 class Login():
 
@@ -48,9 +47,9 @@ class Login():
         if user and pswd:
             if fn.isUserValidate(user, pswd):
                 fn.createAuth(user)
-                self.master.destroy() 
-                fn.start(Panel)
+                self.master.destroy()
+                fn.startMain()
             else:
-                messagebox.showerror("Error","Please make sure that the details are correct!")
+                fn.error("Please make sure that the details are correct!")
         else:
-            messagebox.showerror("Error","Please enter your login details!")
+            fn.error("Please enter your login details!")

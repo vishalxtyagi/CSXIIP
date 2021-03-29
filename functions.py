@@ -3,6 +3,7 @@ from tkinter import *
 from tkinter import ttk, messagebox
 from ttkthemes import ThemedTk
 from dotenv import load_dotenv
+from main import MainApp
 load_dotenv()
 
 def initDb(user='admin', pswd='admin@123'):
@@ -15,27 +16,30 @@ def initDb(user='admin', pswd='admin@123'):
             dump_file = open("database/dump.sqlite", "r")
             cur.execute(dump_file.read())
             dump_file.close()
-            cur.execute('INSERT INTO users(username, password) VALUES(?,?)', (user, bcrypt.hashpw(pswd.encode(), bcrypt.gensalt())))
+            cur.execute('INSERT INTO users(username, password) VALUES("{}","{}")'.format(user, bcrypt.hashpw(pswd.encode(), bcrypt.gensalt())))
             conn.commit()
             conn.close()
     except Exception as e:
         if conn:
             conn.close()
         os.remove(os.getenv("DB"))
-        messagebox.showerror("Something went wrong!", e)
+        print(e)
 
 def isUserValidate(user, pswd):
     initDb()
     isValidate = False
-    conn = sqlite3.connect(os.getenv("DB"))  
-    cur = conn.cursor()
-    cur.execute("SELECT password FROM users WHERE username = ?",(user,))
-    for data in cur.fetchall():
-        if bcrypt.checkpw(pswd.encode(), data[0]):
-            isValidate = True
-            break
-    else:
-        conn.close()
+    try:
+        conn = sqlite3.connect(os.getenv("DB"))  
+        cur = conn.cursor()
+        cur.execute("SELECT password FROM users WHERE username = '{}'".format(user))
+        for data in cur.fetchall():
+            if bcrypt.checkpw(pswd.encode(), data[0]):
+                isValidate = True
+                break
+        else:
+            conn.close()
+    except Exception as e:
+        print(e) 
     return isValidate
 
 def createAuth(user):
@@ -50,7 +54,7 @@ def checkAuth():
         conn = sqlite3.connect(os.getenv("DB")) 
         cur = conn.cursor()
         authFile = open("database/auth", "rb")
-        cur.execute("SELECT * FROM users WHERE username = ?", (pickle.load(authFile),))
+        cur.execute("SELECT * FROM users WHERE username = {}".format(pickle.load(authFile)))
         authFile.close()
         result = cur.fetchone()
         conn.close()
@@ -66,7 +70,7 @@ def checkAuth():
     return isLogged
 
 def winTitle(title):
-    return title + ' | ' + os.getenv("APP_TITLE")
+    return '{} | {}'.format(title, os.getenv("APP_TITLE"))
 
 def getTablesFromDB(db=os.getenv("DB")):
     initDb()
@@ -83,12 +87,12 @@ def getTablesFromDB(db=os.getenv("DB")):
         print(e)
         return []
 
-def getColumnsFromDB(table, db=os.getenv("DB")):
+def getColumnsFromTable(table, db=os.getenv("DB")):
     initDb()
     try:
         conn = sqlite3.connect(db)  
         cur = conn.cursor()
-        cur.execute("SELECT * FROM " + table)
+        cur.execute("SELECT * FROM {}".format(table))
         result = [description[0] for description in cur.description]
         conn.close()
         return result
@@ -103,57 +107,89 @@ def fetchDataFromTable(column, table, db=os.getenv("DB")):
     try:
         conn = sqlite3.connect(db)  
         cur = conn.cursor()
-        cur.execute("SELECT " + column + " FROM " + table)
+        sql = "SELECT {} FROM {}".format(column, table)
+        cur.execute(sql)
         result = cur.fetchall()
         conn.close()
         return result
     except Exception as e:
         if conn:
             conn.close()
-        print(e)
+        error(e)
         return []
 
-def execSQL(sql, db=os.getenv("DB")):
+def addDataToTable(dict_items, table, db=os.getenv("DB")):
     initDb()
     try:
         conn = sqlite3.connect(db)  
         cur = conn.cursor()
+        sql = 'INSERT INTO {}({}) VALUES({})'.format(table, ', '.join(i for i in dict_items), ', '.join('"{}"'.format(dict_items[i]) for i in dict_items))
         cur.execute(sql)
-        return cur
+        conn.commit()
         conn.close()
+        success("Record added successfully!")
     except Exception as e:
         if conn:
             conn.close()
-        print(e)
-        return None
+        error(e)
 
-def getDataTypeFromTable(table, db=os.getenv("DB")):
+def updateDataToTable(dict_items, item_id, table, db=os.getenv("DB")):
+    initDb()
+    try:
+        conn = sqlite3.connect(db)
+        cur = conn.cursor()
+        sql = 'UPDATE {} SET {} WHERE id={}'.format(table, ', '.join('{}="{}"'.format(i,j) for i,j in dict_items.items()), item_id)
+        cur.execute(sql)
+        conn.commit()
+        conn.close()
+        success("Record updated successfully!")
+    except Exception as e:
+        if conn:
+            conn.close()
+        error(e)
+
+def deleteDataFromTable(item_id, table, db=os.getenv("DB")):
     initDb()
     try:
         conn = sqlite3.connect(db)  
         cur = conn.cursor()
-        cur.execute("PRAGMA table_info("+ table +")")
-        result = {}
-        for x in cur.fetchall():
-            result[x[1]] = x[2]
+        sql = "DELETE FROM {} WHERE id = {}".format(table, item_id)
+        cur.execute(sql)
+        conn.commit()
+        conn.close()
+        success("Record deleted successfully!")
+    except Exception as e:
+        if conn:
+            conn.close()
+        error(e)
+
+def fetchRecordFromTable(item_id, table, column="*", db=os.getenv("DB")):
+    initDb()
+    try:
+        conn = sqlite3.connect(db)  
+        cur = conn.cursor()
+        sql = "SELECT {} FROM {} WHERE id = {}".format(column, table, item_id)
+        cur.execute(sql)
+        result = cur.fetchone()
         conn.close()
         return result
     except Exception as e:
         if conn:
             conn.close()
         print(e)
-        return {}
+        return ()
 
-def add():
-    pass
+def error(e):
+    messagebox.showerror("Something went wrong!", e)
 
-def delete():
-    pass
-
-def update():
-    pass
+def success(e):
+    messagebox.showinfo("Success!", e)
 
 def start(window):
     root = ThemedTk(background=True, theme="breeze")
     app = window(root)
     root.mainloop()
+
+def startMain():
+    app = MainApp()
+    app.mainloop()
