@@ -1,33 +1,67 @@
-import bcrypt
+import bcrypt, os
+from functools import partial
 from tkinter import *
 from tkinter import ttk
 from ttkwidgets.frames import ScrolledFrame
 from PIL import ImageTk
 from PIL import Image as pilImage
 import functions as fn
+from dotenv import load_dotenv
 
 class Panel(Frame):
      
-    def __init__(self, parent, controller):
+    def __init__(self, parent, controller, page_name):
          
         Frame.__init__(self, parent)
         
-        lbl_title = Label(self,height=2, text='School Management System', font=("Segoe UI", 25, "bold"), bg="#1b2838",fg="white")
+        load_dotenv()
+        
+        self.page_name = page_name
+
+        lbl_title = Label(self,height=2, text=os.getenv("APP_TITLE"), font=("Segoe UI", 25, "bold"), bg="#1b2838",fg="white")
         menu_frame = ScrolledFrame(self)
 
         lst_menu = fn.getTablesFromDB()
         lst_menu[lst_menu.index('sqlite_sequence')] = 'dashboard'
         for data in lst_menu:
             menuimg = ImageTk.PhotoImage(pilImage.open("images/menu/"+ data +".png").resize((50, 50), pilImage.ANTIALIAS))
-            menubtn = ttk.Button(menu_frame.interior, text=data, image=menuimg, compound=LEFT, command=lambda: controller.show_frame(Panel))
+            menubtn = ttk.Button(menu_frame.interior, text=data, image=menuimg, compound=LEFT, command=partial(controller.show_frame,data))
             menubtn.image = menuimg
             menubtn.pack()
+
+        lbl_title.pack(fill=X)
+        menu_frame.pack(side=LEFT, fill=BOTH, expand=True)
+
+        if page_name in fn.getTablesFromDB():
+            self.initApp()
+        else:
+            self.customState()
+
+    def customState(self):
+        if self.page_name == 'dashboard':
+            img = ImageTk.PhotoImage(pilImage.open('images/overview.jpg').resize((50, 50), pilImage.ANTIALIAS))
+            title = "Welcome Back, {}".format(fn.currentUser())
+            subtitle = "<<< Browse the menu for more options."
+        else:
+            img = ImageTk.PhotoImage(pilImage.open('images/empty.jpg').resize((50, 50), pilImage.ANTIALIAS))
+            title = "Sorry! This service is currently unavailable"
+            subtitle = "Please try again later or ask the developer for it."
         
-        ctrl_frame = ttk.Frame(self)
+        lbl_img = ttk.Label(self, image=img)
+        lbl_img.image = img
+        lbl_title = ttk.Label(self, text=title, font=("Segoe UI", 18, "bold"))
+        lbl_subtitle = ttk.Label(self, text=subtitle, font=("Segoe UI", 14))
+
+        lbl_img.place(relx=0.5, rely=0.5, anchor=CENTER)
+        lbl_title.pack()
+        lbl_subtitle.pack(pady=(0,20))
+
+    def initApp(self):
+        ctrl_frame = ScrolledFrame(self)
         tbl_frame = ttk.Frame(self)
-        mngr_frame = ttk.Frame(ctrl_frame)
+        mngr_frame = ttk.Frame(ctrl_frame.interior)
         
-        lbl_ctrls = ttk.Label(ctrl_frame, text='Manage Student', font=("Segoe UI", 14, "bold")).pack(pady=20)
+        lbl_ctrls = ttk.Label(mngr_frame, text='Manage Student', font=("Segoe UI", 14, "bold")).pack(pady=20)
 
         self.lst_entry = fn.getColumnsFromTable(self.page_name)
         self.lst_variables = []
@@ -68,8 +102,6 @@ class Panel(Frame):
         self.tbl_data.configure(xscrollcommand = horscrlbar.set)
         self.tbl_data.configure(yscrollcommand = verscrlbar.set)
 
-        lbl_title.pack(fill=X)
-        menu_frame.pack(side=LEFT, fill=BOTH, expand=True)
         ctrl_frame.pack(fill=BOTH, expand=True,side=LEFT)
         mngr_frame.pack(fill=BOTH, expand=True, padx=20)
         tbl_frame.pack(fill=BOTH, expand=True,side=LEFT)
@@ -144,3 +176,6 @@ class Panel(Frame):
             fn.updateDataToTable(dict_items, self.lst_variables[0].get(), self.page_name)
             self.show_data()
             self.clear_entry()
+
+if __name__ == "__main__":
+    fn.startMain()

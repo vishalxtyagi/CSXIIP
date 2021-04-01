@@ -3,8 +3,12 @@ from tkinter import *
 from tkinter import ttk, messagebox
 from ttkthemes import ThemedTk
 from dotenv import load_dotenv
-from main import MainApp
+from main import *
 load_dotenv()
+
+def hashpw(pswd):
+    result = bcrypt.hashpw(pswd.encode(), bcrypt.gensalt())
+    return result.decode()
 
 def initDb(user='admin', pswd='admin@123'):
     try:
@@ -14,16 +18,16 @@ def initDb(user='admin', pswd='admin@123'):
             conn = sqlite3.connect(os.getenv("DB")) 
             cur = conn.cursor()
             dump_file = open("database/dump.sqlite", "r")
-            cur.execute(dump_file.read())
+            cur.executescript(dump_file.read())
             dump_file.close()
-            cur.execute('INSERT INTO users(username, password) VALUES("{}","{}")'.format(user, bcrypt.hashpw(pswd.encode(), bcrypt.gensalt())))
+            cur.execute('INSERT INTO users(username, password) VALUES("{}","{}")'.format(user, hashpw(pswd)))
             conn.commit()
             conn.close()
     except Exception as e:
         if conn:
             conn.close()
-        os.remove(os.getenv("DB"))
         print(e)
+        os.remove(os.getenv("DB"))
 
 def isUserValidate(user, pswd):
     initDb()
@@ -31,15 +35,18 @@ def isUserValidate(user, pswd):
     try:
         conn = sqlite3.connect(os.getenv("DB"))  
         cur = conn.cursor()
-        cur.execute("SELECT password FROM users WHERE username = '{}'".format(user))
-        for data in cur.fetchall():
-            if bcrypt.checkpw(pswd.encode(), data[0]):
-                isValidate = True
-                break
-        else:
-            conn.close()
+        cur.execute("SELECT password FROM users WHERE username = '{}'".format(user, hashpw(pswd)))
+        result = cur.fetchall()
+        conn.close()
     except Exception as e:
-        print(e) 
+        print(e)
+        result = []
+
+    pswd = pswd.encode()
+    for data in result:
+        if bcrypt.checkpw(pswd, data[0].encode()):
+            isValidate = True
+            break
     return isValidate
 
 def createAuth(user):
@@ -47,15 +54,22 @@ def createAuth(user):
     pickle.dump(user,auth_file)
     auth_file.close()
 
+def currentUser():
+    try:
+        authFile = open("database/auth", "rb")
+        user = pickle.load(authFile)
+        authFile.close()
+        return user
+    except:
+        return None
+
 def checkAuth():
     initDb()
     isLogged = False
     try:
         conn = sqlite3.connect(os.getenv("DB")) 
         cur = conn.cursor()
-        authFile = open("database/auth", "rb")
-        cur.execute("SELECT * FROM users WHERE username = {}".format(pickle.load(authFile)))
-        authFile.close()
+        cur.execute("SELECT * FROM users WHERE username = '{}'".format(currentUser()))
         result = cur.fetchone()
         conn.close()
         if result is None:

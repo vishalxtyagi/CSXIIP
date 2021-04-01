@@ -53,3 +53,6 @@ class Login():
                 fn.error("Please make sure that the details are correct!")
         else:
             fn.error("Please enter your login details!")
+
+if __name__ == "__main__":
+    fn.startMain()
