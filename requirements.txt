@@ -1,0 +1,7 @@
+sqlite3
+bcrypt
+tkinter
+ttkthemes
+dotenv
+Pillow
+ttkwidgets
