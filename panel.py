@@ -21,8 +21,8 @@ class Panel(Frame):
         lbl_title = Label(self,height=2, text=os.getenv("APP_TITLE"), font=("Segoe UI", 25, "bold"), bg="#1b2838",fg="white")
         menu_frame = ScrolledFrame(self)
 
-        lst_menu = fn.getTablesFromDB()
-        lst_menu[lst_menu.index('sqlite_sequence')] = 'dashboard'
+        lst_menu = fn.fn.getMenuItems()
+        lst_menu.append('empty')
         for data in lst_menu:
             menuimg = ImageTk.PhotoImage(pilImage.open("images/menu/"+ data +".png").resize((50, 50), pilImage.ANTIALIAS))
             menubtn = ttk.Button(menu_frame.interior, text=data, image=menuimg, compound=LEFT, command=partial(controller.show_frame,data))
@@ -30,31 +30,37 @@ class Panel(Frame):
             menubtn.pack()
 
         lbl_title.pack(fill=X)
-        menu_frame.pack(side=LEFT, fill=BOTH, expand=True)
+        menu_frame.pack(side=LEFT, fill=BOTH)
 
-        if page_name in fn.getTablesFromDB():
-            self.initApp()
-        else:
+        if page_name not in fn.getTablesFromDB():
             self.customState()
+        else:
+            self.initApp()
+
 
     def customState(self):
+        content = ttk.Frame(self)
+        frm_state = ttk.Frame(content)
+
         if self.page_name == 'dashboard':
-            img = ImageTk.PhotoImage(pilImage.open('images/overview.jpg').resize((50, 50), pilImage.ANTIALIAS))
+            image = ImageTk.PhotoImage(pilImage.open('images/overview.png').resize((150, 150), pilImage.ANTIALIAS))
             title = "Welcome Back, {}".format(fn.currentUser())
             subtitle = "<<< Browse the menu for more options."
         else:
-            img = ImageTk.PhotoImage(pilImage.open('images/empty.jpg').resize((50, 50), pilImage.ANTIALIAS))
+            image = ImageTk.PhotoImage(pilImage.open('images/error.png').resize((150, 150), pilImage.ANTIALIAS))
             title = "Sorry! This service is currently unavailable"
             subtitle = "Please try again later or ask the developer for it."
-        
-        lbl_img = ttk.Label(self, image=img)
-        lbl_img.image = img
-        lbl_title = ttk.Label(self, text=title, font=("Segoe UI", 18, "bold"))
-        lbl_subtitle = ttk.Label(self, text=subtitle, font=("Segoe UI", 14))
 
-        lbl_img.place(relx=0.5, rely=0.5, anchor=CENTER)
+        lbl_img = ttk.Label(frm_state, image=image)
+        lbl_img.image = image
+        lbl_title = ttk.Label(frm_state, text=title, font=("Segoe UI", 18, "bold"))
+        lbl_subtitle = ttk.Label(frm_state, text=subtitle, font=("Segoe UI", 14))
+
+        lbl_img.pack()
         lbl_title.pack()
         lbl_subtitle.pack(pady=(0,20))
+        frm_state.place(relx=0.5, rely=0.5, anchor=CENTER)
+        content.pack(side=LEFT, fill=BOTH, expand=True)
 
     def initApp(self):
         ctrl_frame = ScrolledFrame(self)

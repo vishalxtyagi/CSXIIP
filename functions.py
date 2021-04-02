@@ -61,7 +61,7 @@ def currentUser():
         authFile.close()
         return user
     except:
-        return None
+        return 'guest'
 
 def checkAuth():
     initDb()
@@ -100,6 +100,12 @@ def getTablesFromDB(db=os.getenv("DB")):
             conn.close()
         print(e)
         return []
+
+def getMenuItems(db=os.getenv("DB")):
+    tbl_list = getTablesFromDB()
+    tbl_list.remove('sqlite_sequence')
+    tbl_list.insert(0, 'dashboard')
+    return tbl_list
 
 def getColumnsFromTable(table, db=os.getenv("DB")):
     initDb()
@@ -200,10 +206,16 @@ def success(e):
     messagebox.showinfo("Success!", e)
 
 def start(window):
-    root = ThemedTk(background=True, theme="breeze")
-    app = window(root)
-    root.mainloop()
+    try:
+        root = ThemedTk(background=True, theme="breeze")
+        app = window(root)
+        root.mainloop()
+    except Exception as e:
+        print(e)
 
 def startMain():
-    app = MainApp()
-    app.mainloop()
+    try:
+        app = MainApp()
+        app.mainloop()
+    except Exception as e:
+        print(e)

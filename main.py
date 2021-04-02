@@ -26,8 +26,8 @@ class MainApp(ThemedTk):
   
         self.frames = {}
 
-        lst_table = fn.getTablesFromDB()
-        lst_table[lst_table.index('sqlite_sequence')] = 'dashboard'
+        lst_table = fn.getMenuItems()
+        lst_table.append('empty')
         for tbl in lst_table:
   
             frame = Panel(container, self, tbl)
@@ -43,8 +43,7 @@ class MainApp(ThemedTk):
 
 if __name__ == '__main__':
     if fn.checkAuth():
-        app = MainApp()
-        app.mainloop()
+        fn.startMain()
     else:
         fn.start(Login)
     
