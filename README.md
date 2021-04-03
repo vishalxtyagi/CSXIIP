@@ -21,7 +21,7 @@ python main.py
 To Create the Production version (i.e, exectable file), just run it against main script:
 
 ```bash
-pyinstaller --onefile main.py
+pyinstaller --onefile --windowed --icon=images/icon.ico main.py
 ```
 
 ## Screenshots
