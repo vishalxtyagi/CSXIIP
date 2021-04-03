@@ -1,6 +1,5 @@
 bcrypt
-tkinter
 ttkthemes
-dotenv
+python-dotenv
 Pillow
 ttkwidgets
