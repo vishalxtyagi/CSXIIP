@@ -1,0 +1,35 @@
+# Drop this file into .github/workflows/ in ANY project repo to wire it into
+# the portfolio auto-update pipeline. On every push to main, this triggers
+# a rebuild of vishalxtyagi.in within ~2 minutes.
+#
+# One-time setup:
+#   1. Create a GitHub PAT with `repo` scope on the portfolio repo
+#   2. Add it as a secret named PORTFOLIO_DISPATCH_TOKEN in THIS repo's settings
+#   3. That's all.
+
+name: Notify portfolio on push
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  trigger-portfolio-rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch portfolio rebuild
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PORTFOLIO_DISPATCH_TOKEN }}
+          script: |
+            await github.rest.repos.createDispatchEvent({
+              owner: 'vishalxtyagi',
+              repo: 'vishalxtyagi',
+              event_type: 'project-updated',
+              client_payload: {
+                source_repo: '${{ github.repository }}',
+                ref: '${{ github.ref }}',
+                sha: '${{ github.sha }}'
+              }
+            });
+            console.log('Portfolio rebuild triggered from ${{ github.repository }}');
